@@ -50,9 +50,9 @@ func RegisterHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, models.Response{
-    Status: http.StatusCreated,
-    Message: "Register success",
-  })
+		Status:  http.StatusCreated,
+		Message: "Register success",
+	})
 }
 
 type LoginRequest struct {
@@ -73,7 +73,7 @@ func LoginHandler(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var result models.User
+	var result models.UserModel
 	filter := bson.D{primitive.E{Key: "username", Value: r.Username}}
 
 	err := db.GetCollection("users").FindOne(ctx, filter).Decode(&result)
@@ -99,18 +99,18 @@ func LoginHandler(c echo.Context) error {
 
 		return c.JSON(
 			http.StatusOK,
-      models.Response{
-        Status: http.StatusOK,
-        Message: "Login success",
-        Data: map[string]string{
-          "token": token,
-        },
-      },
-    )
+			models.Response{
+				Status:  http.StatusOK,
+				Message: "Login success",
+				Data: map[string]string{
+					"token": token,
+				},
+			},
+		)
 	}
 
 	return c.JSON(http.StatusUnauthorized, models.Response{
-    Status: http.StatusUnauthorized,
-    Message: "Login failed",
-  })
+		Status:  http.StatusUnauthorized,
+		Message: "Login failed",
+	})
 }

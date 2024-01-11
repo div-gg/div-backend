@@ -11,7 +11,7 @@ const (
   VAL = "VAL"
 )
 
-type Post struct {
+type PostModel struct {
   ID primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 
   Description string `bson:"description" json:"description" validate:"required"`
