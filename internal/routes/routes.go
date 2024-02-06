@@ -7,4 +7,5 @@ import (
 func InitRoutes(e *echo.Echo) {
   v1 := e.Group("/v1")
   RegisterAuthRoutes(v1)
+  RegisterPostRoutes(v1)
 }

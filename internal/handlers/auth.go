@@ -73,7 +73,7 @@ func LoginHandler(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var result models.UserModel
+	var result models.User
 	filter := bson.D{primitive.E{Key: "username", Value: r.Username}}
 
 	err := db.GetCollection("users").FindOne(ctx, filter).Decode(&result)
@@ -87,8 +87,6 @@ func LoginHandler(c echo.Context) error {
 		log.Print(err)
 		return err
 	}
-
-	log.Printf("%T\n", result.ID)
 
 	if match {
 		token, err := utils.CreateToken(result.ID.String())
