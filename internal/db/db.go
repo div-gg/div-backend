@@ -42,6 +42,16 @@ func InitDB() {
   ); err != nil {
     log.Println(err)
   }
+
+  if _, err := GetCollection("posts").Indexes().CreateOne(
+    context.Background(),
+    mongo.IndexModel{
+      Keys: bson.D{{Key: "expire_at", Value: 1}},
+      Options: options.Index().SetExpireAfterSeconds(0),
+    },
+  ); err != nil {
+    log.Println(err)
+  }
 }
 
 func GetCollection(collectionName string) *mongo.Collection {
