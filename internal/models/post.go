@@ -9,7 +9,7 @@ import (
 type Post struct {
   ID primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 
-  Description string `bson:"description" json:"description" validate:"required"`
+  Body string `bson:"body" json:"body" validate:"required"`
   OpenSlots int `bson:"open_slots" json:"open_slots" validate:"required"`
   Game string `bson:"game" json:"game" validate:"required, oneof=valorant csgo lol"`
 
