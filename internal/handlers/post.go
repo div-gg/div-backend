@@ -13,27 +13,32 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func PostGetAll(c echo.Context) error {
 	page, limit := utils.GetPaginationValues(c)
 
-	sort := bson.D{primitive.E{Key: "created_at", Value: -1}}
+	sort := bson.D{primitive.E{Key: "updated_at", Value: -1}}
 	opts := options.Find().SetSort(sort).SetSkip(page).SetLimit(limit)
 	filter := bson.D{}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	cursor, err := db.GetCollection("posts").Find(ctx, filter, opts)
+	cursor, err := db.GetCollection("posts").Find(context.TODO(), filter, opts)
 	if err != nil {
+    if err == mongo.ErrNoDocuments {
+      return c.JSON(http.StatusOK, []models.Post{})
+    }
 		return err
 	}
 
 	var results []models.Post
-	if err = cursor.All(ctx, &results); err != nil {
-		return err
+	if err = cursor.All(context.TODO(), &results); err != nil {
+    if err == mongo.ErrNoDocuments {
+      return c.JSON(http.StatusOK, results)
+    }
+
+    return err
 	}
 
 	for _, result := range results {
@@ -41,7 +46,19 @@ func PostGetAll(c echo.Context) error {
 		log.Println(string(res))
 	}
 
-	return c.JSON(http.StatusOK, results)
+  var data interface{}
+
+  if results != nil {
+    data = results
+  } else {
+    data = []models.Post{}
+  }
+
+	return c.JSON(http.StatusOK, models.Response{
+    Status: http.StatusOK,
+    Message: "Posts retrieved successfully",
+    Data: data,
+  })
 }
 
 func PostGetOne(c echo.Context) error {
@@ -73,23 +90,28 @@ func PostCreate(c echo.Context) error {
 
 	post.CreatedAt = time.Now()
 	post.UpdatedAt = time.Now()
-  post.ExpireAt = time.Now().Add(time.Second * 10)
+	post.ExpireAt = time.Now().Add(time.Second * 10)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err := db.GetCollection("posts").InsertOne(ctx, post)
+	_, err := db.GetCollection("posts").InsertOne(context.TODO(), post)
 	if err != nil {
 		return err
 	}
 
 	return c.JSON(
-    http.StatusCreated,
+		http.StatusCreated,
 		models.Response{
 			Status:  http.StatusCreated,
 			Message: "Post created successfully",
 		},
 	)
+}
+
+type PostUpdateRequest struct {
+	Body      string `json:"body" validate:"required"`
+	OpenSlots int    `json:"open_slots" validate:"required"`
+	Game      string `json:"game" validate:"required,oneof=valorant csgo lol"`
+
+  UpdatedAt time.Time `json:"updated_at"`
 }
 
 func PostUpdate(c echo.Context) error {
@@ -98,31 +120,26 @@ func PostUpdate(c echo.Context) error {
 		return err
 	}
 
-	post := new(models.Post)
+	post := new(PostUpdateRequest)
 	if err := c.Bind(post); err != nil {
 		return err
 	}
-
 	post.UpdatedAt = time.Now()
 
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
-	update := bson.D{primitive.E{Key: "$set", Value: post}}
+	update := bson.M{ "$set": post }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-  _, err = db.GetCollection("posts").UpdateOne(ctx, filter, update)
+	_, err = db.GetCollection("posts").UpdateByID(context.TODO(), id, update)
 	if err != nil {
 		return err
 	}
 
 	return c.JSON(
-    http.StatusOK,
-    models.Response{
-      Status:  http.StatusOK,
-      Message: "Post updated successfully",
-    },
-  )
+		http.StatusOK,
+		models.Response{
+			Status:  http.StatusOK,
+			Message: "Post updated successfully",
+		},
+	)
 }
 
 func PostDelete(c echo.Context) error {
@@ -133,19 +150,16 @@ func PostDelete(c echo.Context) error {
 
 	filter := bson.D{primitive.E{Key: "_id", Value: id}}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err = db.GetCollection("posts").DeleteOne(ctx, filter)
+	_, err = db.GetCollection("posts").DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return err
 	}
 
 	return c.JSON(
-    http.StatusOK,
-    models.Response{
-      Status:  http.StatusOK,
-      Message: "Post deleted successfully",
-    },
-  )
+		http.StatusOK,
+		models.Response{
+			Status:  http.StatusOK,
+			Message: "Post deleted successfully",
+		},
+	)
 }

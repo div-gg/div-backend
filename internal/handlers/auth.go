@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type RegisterRequest struct {
@@ -38,15 +38,25 @@ func RegisterHandler(c echo.Context) error {
 		return err
 	}
 
-	r.Password, _ = utils.CreateHash(r.Password, utils.DefaultParams)
+  if hashedPassword, err := utils.CreateHash(r.Password, utils.DefaultParams); err != nil {
+    return err
+  } else {
+    r.Password = hashedPassword
+  }
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := db.GetCollection("users").InsertOne(ctx, r)
+  _, err := db.GetCollection("users").InsertOne(ctx, r)
 	if err != nil {
-		log.Print(err)
-		return err
+    if mongo.IsDuplicateKeyError(err) {
+      return c.JSON(http.StatusConflict, models.Response{
+        Status:  http.StatusConflict,
+        Message: "Username or email already exists",
+      })
+    }
+
+    return err
 	}
 
 	return c.JSON(http.StatusCreated, models.Response{
@@ -78,20 +88,24 @@ func LoginHandler(c echo.Context) error {
 
 	err := db.GetCollection("users").FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-		log.Print(err)
-		return err
+    if err == mongo.ErrNoDocuments {
+      return c.JSON(http.StatusUnauthorized, models.Response{
+        Status:  http.StatusUnauthorized,
+        Message: "User not found",
+      })
+    }
+
+    return err
 	}
 
 	match, _, err := utils.CheckHash(r.Password, result.Password)
 	if err != nil {
-		log.Print(err)
-		return err
+    return err
 	}
 
 	if match {
 		token, err := utils.CreateToken(result.ID.String())
 		if err != nil {
-			log.Print(err)
 			return err
 		}
 
@@ -109,6 +123,6 @@ func LoginHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusUnauthorized, models.Response{
 		Status:  http.StatusUnauthorized,
-		Message: "Login failed",
+		Message: "Wrong password",
 	})
 }
