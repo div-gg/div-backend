@@ -20,4 +20,5 @@ func InitRoutes(e *echo.Echo) {
 
   RegisterAuthRoutes(v1)
   RegisterPostRoutes(v1)
+  RegisterUserRoutes(v1)
 }
