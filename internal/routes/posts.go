@@ -14,6 +14,6 @@ func RegisterPostRoutes(e *echo.Group) {
 	posts.POST("", handlers.PostCreate, middlewares.VerifyToken)
 
 	posts.GET("/:id", handlers.PostGetByID)
-	posts.PUT("/:id", handlers.PostUpdate)
-	posts.DELETE("/:id", handlers.PostDelete)
+	posts.PUT("/:id", handlers.PostUpdateByID, middlewares.VerifyToken)
+	posts.DELETE("/:id", handlers.PostDeleteByID, middlewares.VerifyToken)
 }

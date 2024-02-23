@@ -24,7 +24,11 @@ func PostGetAll(c echo.Context) error {
 	opts := options.Find().SetSort(sort).SetSkip(page).SetLimit(limit)
 	filter := bson.D{}
 
-	cursor, err := db.GetCollection("posts").Find(context.TODO(), filter, opts)
+	cursor, err := db.GetCollection("posts").Find(
+    context.TODO(),
+    filter,
+    opts,
+  )
 	if err != nil {
 		return err
 	}
@@ -63,10 +67,12 @@ func PostGetByID(c echo.Context) error {
 		})
 	}
 
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
 	var result models.Post
 
-	err = db.GetCollection("posts").FindOne(context.TODO(), filter).Decode(&result)
+	err = db.GetCollection("posts").FindOne(
+		context.TODO(),
+		bson.M{"_id": id},
+	).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return c.JSON(http.StatusNotFound, models.Response{
@@ -85,7 +91,7 @@ func PostGetByID(c echo.Context) error {
 	})
 }
 
-type PostCreateRequest struct {
+type PostCreateBody struct {
 	Body      string `bson:"body" json:"body" validate:"required"`
 	OpenSlots int    `bson:"open_slots" json:"open_slots" validate:"required"`
 	Game      string `bson:"game" json:"game" validate:"required, oneof=valorant csgo lol"`
@@ -94,18 +100,31 @@ type PostCreateRequest struct {
 }
 
 func PostCreate(c echo.Context) error {
-	post := new(PostCreateRequest)
+	post := new(PostCreateBody)
 	if err := c.Bind(post); err != nil {
 		return err
 	}
 
-	data := bson.M{
-		"body":       post.Body,
-		"open_slots": post.OpenSlots,
-		"game":       post.Game,
-		"expire_at":  time.Now().Add(time.Duration(post.ExpireAfter) * time.Hour),
-		"created_at": time.Now(),
-		"updated_at": time.Now(),
+	data := bson.M{}
+
+	if post.Body == "" {
+		data["body"] = post.Body
+	}
+	if post.OpenSlots == 0 {
+		data["open_slots"] = post.OpenSlots
+	}
+	if post.Game == "" {
+		data["game"] = post.Game
+	}
+
+	data["created_at"] = time.Now()
+	data["updated_at"] = time.Now()
+	data["created_user"] = c.Get("userId")
+	data["updated_user"] = c.Get("userId")
+  if post.ExpireAfter == 0 {
+		data["expire_at"] = time.Now().Add(time.Duration(post.ExpireAfter) * time.Hour)
+	} else {
+		data["expire_at"] = time.Now().Add(time.Duration(6) * time.Hour)
 	}
 
 	_, err := db.GetCollection("posts").InsertOne(context.TODO(), data)
@@ -122,15 +141,13 @@ func PostCreate(c echo.Context) error {
 	)
 }
 
-type PostUpdateRequest struct {
-	Body      string `json:"body" validate:"required"`
-	OpenSlots int    `json:"open_slots" validate:"required"`
-	Game      string `json:"game" validate:"required,oneof=valorant csgo lol"`
-
-	UpdatedAt time.Time `json:"updated_at"`
+type PostUpdateBody struct {
+	Body      string `bson:"body,omitempty" json:"body,omitempty"`
+	OpenSlots int    `bson:"open_slots,omitempty" json:"open_slots,omitempty"`
+	Game      string `bson:"game,omitempty" json:"game,omitempty" validate:"oneof=valorant csgo lol"`
 }
 
-func PostUpdate(c echo.Context) error {
+func PostUpdateByID(c echo.Context) error {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
@@ -139,7 +156,7 @@ func PostUpdate(c echo.Context) error {
 		})
 	}
 
-	post := new(PostUpdateRequest)
+	post := new(PostUpdateBody)
 	if err := c.Bind(post); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  http.StatusBadRequest,
@@ -147,14 +164,25 @@ func PostUpdate(c echo.Context) error {
 		})
 	}
 
-	data := bson.M{"$set": bson.M{
-		"body":       post.Body,
-		"open_slots": post.OpenSlots,
-		"game":       post.Game,
-		"updated_at": time.Now(),
-	}}
+	data := bson.M{}
+	if post.Body != "" {
+		data["body"] = post.Body
+	}
+	if post.OpenSlots != 0 {
+		data["open_slots"] = post.OpenSlots
+	}
+	if post.Game != "" {
+		data["game"] = post.Game
+	}
 
-	_, err = db.GetCollection("posts").UpdateByID(context.TODO(), id, data)
+	data["updated_at"] = time.Now()
+	data["updated_user"] = c.Get("userId")
+
+	_, err = db.GetCollection("posts").UpdateByID(
+		context.TODO(),
+		id,
+		bson.M{"$set": data},
+	)
 	if err != nil {
 		return err
 	}
@@ -168,7 +196,7 @@ func PostUpdate(c echo.Context) error {
 	)
 }
 
-func PostDelete(c echo.Context) error {
+func PostDeleteByID(c echo.Context) error {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
@@ -177,7 +205,7 @@ func PostDelete(c echo.Context) error {
 		})
 	}
 
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
+	filter := bson.M{"_id": id}
 
 	_, err = db.GetCollection("posts").DeleteOne(context.TODO(), filter)
 	if err != nil {

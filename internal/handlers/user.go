@@ -4,12 +4,9 @@ import (
 	"context"
 	"net/http"
 	"time"
-  "strings"
-  "log"
 
 	"github.com/divinitymn/aion-backend/internal/db"
 	"github.com/divinitymn/aion-backend/internal/models"
-	"github.com/divinitymn/aion-backend/internal/utils"
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
@@ -61,11 +58,41 @@ func UserGetByID(c echo.Context) error {
 	})
 }
 
-func UserUpdateSelf(c echo.Context) error {
-	token := strings.Split(c.Request().Header.Get("Authorization"), "Bearer ")
-  claims := utils.ParseToken(token[1])
+type UserUpdateBody struct {
+  Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
+  FirstName string `bson:"firstname" json:"firstname" validate:"required"`
+  LastName  string `bson:"lastname" json:"lastname" validate:"required"`
+  Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
+  Email     string `bson:"email" json:"email" validate:"required,email"`
 
-  log.Println(claims)
+}
+
+func UserUpdateByID(c echo.Context) error {
+  id, err := primitive.ObjectIDFromHex(c.Param("id"))
+  if err != nil {
+    return c.JSON(http.StatusBadRequest, models.Response{
+      Status:  http.StatusBadRequest,
+      Message: "Invalid ID",
+    })
+  }
+
+  var user models.User
+  if err := c.Bind(&user); err != nil {
+    return c.JSON(http.StatusBadRequest, models.Response{
+      Status:  http.StatusBadRequest,
+      Message: "Invalid request",
+    })
+  }
+
+  user.UpdatedAt = time.Now()
+
+  filter := bson.D{primitive.E{Key: "_id", Value: id}}
+  update := bson.D{primitive.E{Key: "$set", Value: user}}
+
+  _, err = db.GetCollection("users").UpdateOne(context.TODO(), filter, update)
+  if err != nil {
+    return err
+  }
 
   return c.JSON(http.StatusOK, models.Response{
     Status:  http.StatusOK,

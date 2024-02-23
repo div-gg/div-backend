@@ -13,7 +13,9 @@ type Post struct {
 	OpenSlots int    `bson:"open_slots" json:"open_slots" validate:"required"`
 	Game      string `bson:"game" json:"game" validate:"required, oneof=valorant csgo lol"`
 
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
-	ExpireAt  time.Time `bson:"expire_at" json:"expire_at"`
+	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
+	CreatedUser primitive.ObjectID `bson:"created_user" json:"created_user"`
+	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
+	UpdatedUser primitive.ObjectID `bson:"updated_user" json:"updated_user"`
+	ExpireAt    time.Time          `bson:"expire_at" json:"expire_at"`
 }
