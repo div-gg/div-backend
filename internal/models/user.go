@@ -1,22 +1,22 @@
 package models
 
 import (
-  "time"
+	"time"
 
-  "go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
-  ID primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	ID primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 
-  Avatar string `bson:"avatar,omitempty" json:"avatar,omitempty"`
-  FirstName string `bson:"firstname" json:"firstname" validate:"required"`
-  LastName string `bson:"lastname" json:"lastname" validate:"required"`
-  Bio string `bson:"bio,omitempty" json:"bio,omitempty"`
-  Email string `bson:"email" json:"email" validate:"required,email"`
-  Username string `bson:"username" json:"username" validate:"required"`
-  Password string `bson:"password" json:"password" validate:"required"`
+	Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
+	FirstName string `bson:"firstname" json:"firstname" validate:"required"`
+	LastName  string `bson:"lastname" json:"lastname" validate:"required"`
+	Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
+	Email     string `bson:"email" json:"email" validate:"required,email"`
+	Username  string `bson:"username" json:"username" validate:"required"`
+	Password  string `bson:"password" json:"password" validate:"required"`
 
-  CreatedAt time.Time `bson:"created_at" json:"created_at"`
-  UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
 }

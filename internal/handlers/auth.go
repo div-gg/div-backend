@@ -38,25 +38,25 @@ func RegisterHandler(c echo.Context) error {
 		return err
 	}
 
-  if hashedPassword, err := utils.CreateHash(r.Password, utils.DefaultParams); err != nil {
-    return err
-  } else {
-    r.Password = hashedPassword
-  }
+	if hashedPassword, err := utils.CreateHash(r.Password, utils.DefaultParams); err != nil {
+		return err
+	} else {
+		r.Password = hashedPassword
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-  _, err := db.GetCollection("users").InsertOne(ctx, r)
+	_, err := db.GetCollection("users").InsertOne(ctx, r)
 	if err != nil {
-    if mongo.IsDuplicateKeyError(err) {
-      return c.JSON(http.StatusConflict, models.Response{
-        Status:  http.StatusConflict,
-        Message: "Username or email already exists",
-      })
-    }
+		if mongo.IsDuplicateKeyError(err) {
+			return c.JSON(http.StatusConflict, models.Response{
+				Status:  http.StatusConflict,
+				Message: "Username or email already exists",
+			})
+		}
 
-    return err
+		return err
 	}
 
 	return c.JSON(http.StatusCreated, models.Response{
@@ -88,19 +88,19 @@ func LoginHandler(c echo.Context) error {
 
 	err := db.GetCollection("users").FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-    if err == mongo.ErrNoDocuments {
-      return c.JSON(http.StatusUnauthorized, models.Response{
-        Status:  http.StatusUnauthorized,
-        Message: "User not found",
-      })
-    }
+		if err == mongo.ErrNoDocuments {
+			return c.JSON(http.StatusUnauthorized, models.Response{
+				Status:  http.StatusUnauthorized,
+				Message: "User not found",
+			})
+		}
 
-    return err
+		return err
 	}
 
 	match, _, err := utils.CheckHash(r.Password, result.Password)
 	if err != nil {
-    return err
+		return err
 	}
 
 	if match {

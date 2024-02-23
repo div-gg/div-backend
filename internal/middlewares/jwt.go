@@ -1,9 +1,9 @@
 package middlewares
 
 import (
-  "time"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -13,18 +13,17 @@ import (
 
 func VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-    token := strings.Split(c.Request().Header.Get("Authorization"), "Bearer ")
-    claims := utils.ParseToken(token[1])
-    valid := claims.VerifyExpiresAt(time.Now().Unix(), true)
+		token := strings.Split(c.Request().Header.Get("Authorization"), "Bearer ")
+		claims := utils.ParseToken(token[1])
+		valid := claims.VerifyExpiresAt(time.Now().Unix(), true)
 
-    if valid {
-      return next(c)
-    } else {
-      return c.JSON(http.StatusUnauthorized, models.Response{
-        Status: http.StatusUnauthorized,
-        Message: "Token expired",
-      })
-    }
+		if valid {
+			return next(c)
+		} else {
+			return c.JSON(http.StatusUnauthorized, models.Response{
+				Status:  http.StatusUnauthorized,
+				Message: "Token expired",
+			})
+		}
 	}
 }
-

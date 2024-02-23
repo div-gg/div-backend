@@ -1,44 +1,74 @@
 package handlers
 
 import (
-  "context"
-  "net/http"
+	"context"
+	"net/http"
+	"time"
+  "strings"
+  "log"
 
-  "github.com/divinitymn/aion-backend/internal/db"
-  "github.com/divinitymn/aion-backend/internal/models"
+	"github.com/divinitymn/aion-backend/internal/db"
+	"github.com/divinitymn/aion-backend/internal/models"
+	"github.com/divinitymn/aion-backend/internal/utils"
 
-  "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type UserResponse struct {
+	ID primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+
+	Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
+	FirstName string `bson:"firstname" json:"firstname" validate:"required"`
+	LastName  string `bson:"lastname" json:"lastname" validate:"required"`
+	Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
+	Email     string `bson:"email" json:"email" validate:"required,email"`
+	Username  string `bson:"username" json:"username" validate:"required"`
+
+	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+}
+
 func UserGetByID(c echo.Context) error {
-  id, err := primitive.ObjectIDFromHex(c.Param("id"))
-  if err != nil {
-    return c.JSON(http.StatusBadRequest, models.Response{
-      Status: http.StatusBadRequest,
-      Message: "Invalid ID",
-    })
-  }
+	id, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid ID",
+		})
+	}
 
-  filter := bson.D{primitive.E{Key: "_id", Value: id}}
-  var result models.User
+	filter := bson.D{primitive.E{Key: "_id", Value: id}}
+	var result UserResponse
 
-  err = db.GetCollection("users").FindOne(context.TODO(), filter).Decode(&result)
-  if err != nil {
-    if err == mongo.ErrNoDocuments {
-      return c.JSON(http.StatusNotFound, models.Response{
-        Status: http.StatusNotFound,
-        Message: "Post not found",
-      })
-    }
-    return err
-  }
+	err = db.GetCollection("users").FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.JSON(http.StatusNotFound, models.Response{
+				Status:  http.StatusNotFound,
+				Message: "Post not found",
+			})
+		}
+		return err
+	}
+
+	return c.JSON(http.StatusOK, models.Response{
+		Status:  http.StatusOK,
+		Message: "User retrieved successfully",
+		Data:    result,
+	})
+}
+
+func UserUpdateSelf(c echo.Context) error {
+	token := strings.Split(c.Request().Header.Get("Authorization"), "Bearer ")
+  claims := utils.ParseToken(token[1])
+
+  log.Println(claims)
 
   return c.JSON(http.StatusOK, models.Response{
-    Status: http.StatusOK,
-    Message: "User retrieved successfully",
-    Data: result,
+    Status:  http.StatusOK,
+    Message: "User updated successfully",
   })
 }

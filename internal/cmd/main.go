@@ -1,19 +1,19 @@
 package cmd
 
 import (
-  "log"
+	"log"
 
-  "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 
-  "github.com/divinitymn/aion-backend/internal/db"
+	"github.com/divinitymn/aion-backend/internal/db"
 )
 
 func Execute() {
-  err := godotenv.Load()
-  if err != nil {
-    log.Fatal("Error loading .env file")
-  }
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
-  db.InitDB()
-  InitAPI()
+	db.InitDB()
+	InitAPI()
 }

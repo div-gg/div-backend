@@ -1,9 +1,9 @@
 package utils
 
 import (
-  "strconv"
+	"strconv"
 
-  "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4"
 )
 
 func GetPaginationValues(c echo.Context) (int64, int64) {
@@ -18,5 +18,5 @@ func GetPaginationValues(c echo.Context) (int64, int64) {
 		limit = 10
 	}
 
-  return page, limit
+	return page, limit
 }

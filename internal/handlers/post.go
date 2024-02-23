@@ -10,7 +10,7 @@ import (
 	"github.com/divinitymn/aion-backend/internal/models"
 	"github.com/divinitymn/aion-backend/internal/utils"
 
-  "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -31,7 +31,7 @@ func PostGetAll(c echo.Context) error {
 
 	var results []models.Post
 	if err = cursor.All(context.TODO(), &results); err != nil {
-    return err
+		return err
 	}
 
 	for _, result := range results {
@@ -39,28 +39,28 @@ func PostGetAll(c echo.Context) error {
 		log.Println(string(res))
 	}
 
-  var data interface{}
+	var data interface{}
 
-  if results != nil {
-    data = results
-  } else {
-    data = []models.Post{}
-  }
+	if results != nil {
+		data = results
+	} else {
+		data = []models.Post{}
+	}
 
 	return c.JSON(http.StatusOK, models.Response{
-    Status: http.StatusOK,
-    Message: "Posts retrieved successfully",
-    Data: data,
-  })
+		Status:  http.StatusOK,
+		Message: "Posts retrieved successfully",
+		Data:    data,
+	})
 }
 
 func PostGetByID(c echo.Context) error {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-    return c.JSON(http.StatusBadRequest, models.Response{
-      Status:  http.StatusBadRequest,
-      Message: "Invalid ID",
-    })
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid ID",
+		})
 	}
 
 	filter := bson.D{primitive.E{Key: "_id", Value: id}}
@@ -68,29 +68,29 @@ func PostGetByID(c echo.Context) error {
 
 	err = db.GetCollection("posts").FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-    if err == mongo.ErrNoDocuments {
-      return c.JSON(http.StatusNotFound, models.Response{
-        Status: http.StatusNotFound,
-        Message: "Post not found",
-      })
-    }
+		if err == mongo.ErrNoDocuments {
+			return c.JSON(http.StatusNotFound, models.Response{
+				Status:  http.StatusNotFound,
+				Message: "Post not found",
+			})
+		}
 
 		return err
 	}
 
 	return c.JSON(http.StatusOK, models.Response{
-    Status: http.StatusOK,
-    Message: "Post retrieved successfully",
-    Data: result,
-  })
+		Status:  http.StatusOK,
+		Message: "Post retrieved successfully",
+		Data:    result,
+	})
 }
 
 type PostCreateRequest struct {
-  Body string `bson:"body" json:"body" validate:"required"`
-  OpenSlots int `bson:"open_slots" json:"open_slots" validate:"required"`
-  Game string `bson:"game" json:"game" validate:"required, oneof=valorant csgo lol"`
+	Body      string `bson:"body" json:"body" validate:"required"`
+	OpenSlots int    `bson:"open_slots" json:"open_slots" validate:"required"`
+	Game      string `bson:"game" json:"game" validate:"required, oneof=valorant csgo lol"`
 
-  ExpireAfter int `bson:"expire_after" json:"expire_after" validate:"required"`
+	ExpireAfter int `bson:"expire_after" json:"expire_after" validate:"required"`
 }
 
 func PostCreate(c echo.Context) error {
@@ -99,14 +99,14 @@ func PostCreate(c echo.Context) error {
 		return err
 	}
 
-  data := bson.M{
-    "body": post.Body,
-    "open_slots": post.OpenSlots,
-    "game": post.Game,
-    "expire_at": time.Now().Add(time.Duration(post.ExpireAfter) * time.Hour),
-    "created_at": time.Now(),
-    "updated_at": time.Now(),
-  }
+	data := bson.M{
+		"body":       post.Body,
+		"open_slots": post.OpenSlots,
+		"game":       post.Game,
+		"expire_at":  time.Now().Add(time.Duration(post.ExpireAfter) * time.Hour),
+		"created_at": time.Now(),
+		"updated_at": time.Now(),
+	}
 
 	_, err := db.GetCollection("posts").InsertOne(context.TODO(), data)
 	if err != nil {
@@ -127,32 +127,32 @@ type PostUpdateRequest struct {
 	OpenSlots int    `json:"open_slots" validate:"required"`
 	Game      string `json:"game" validate:"required,oneof=valorant csgo lol"`
 
-  UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func PostUpdate(c echo.Context) error {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-    return c.JSON(http.StatusBadRequest, models.Response{
-      Status:  http.StatusBadRequest,
-      Message: "Invalid ID",
-    })
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid ID",
+		})
 	}
 
 	post := new(PostUpdateRequest)
 	if err := c.Bind(post); err != nil {
-    return c.JSON(http.StatusBadRequest, models.Response{
-      Status:  http.StatusBadRequest,
-      Message: "Invalid request",
-    })
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid request",
+		})
 	}
 
 	data := bson.M{"$set": bson.M{
-    "body":       post.Body,
-    "open_slots": post.OpenSlots,
-    "game":       post.Game,
-    "updated_at": time.Now(),
-  }}
+		"body":       post.Body,
+		"open_slots": post.OpenSlots,
+		"game":       post.Game,
+		"updated_at": time.Now(),
+	}}
 
 	_, err = db.GetCollection("posts").UpdateByID(context.TODO(), id, data)
 	if err != nil {
@@ -171,10 +171,10 @@ func PostUpdate(c echo.Context) error {
 func PostDelete(c echo.Context) error {
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-    return c.JSON(http.StatusBadRequest, models.Response{
-      Status:  http.StatusBadRequest,
-      Message: "Invalid ID",
-    })
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid ID",
+		})
 	}
 
 	filter := bson.D{primitive.E{Key: "_id", Value: id}}

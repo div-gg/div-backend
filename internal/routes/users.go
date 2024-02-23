@@ -2,13 +2,14 @@ package routes
 
 import (
 	"github.com/divinitymn/aion-backend/internal/handlers"
-  // "github.com/divinitymn/aion-backend/internal/middlewares"
+	"github.com/divinitymn/aion-backend/internal/middlewares"
 
-  "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4"
 )
 
 func RegisterUserRoutes(e *echo.Group) {
-  users := e.Group("/posts")
+	users := e.Group("/users")
 
-  users.GET("/:id", handlers.UserGetByID)
+	users.GET("/:id", handlers.UserGetByID)
+	users.GET("/update", handlers.UserUpdateSelf, middlewares.VerifyToken)
 }
