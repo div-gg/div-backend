@@ -5,7 +5,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"github.com/divinitymn/aion-backend/internal/db"
+	"github.com/divinitymn/div-backend/internal/db"
 )
 
 func Execute() {

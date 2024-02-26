@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/divinitymn/aion-backend/internal/db"
-	"github.com/divinitymn/aion-backend/internal/models"
+	"github.com/divinitymn/div-backend/internal/db"
+	"github.com/divinitymn/div-backend/internal/models"
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"

@@ -6,9 +6,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/divinitymn/aion-backend/internal/db"
-	"github.com/divinitymn/aion-backend/internal/middlewares"
-	r "github.com/divinitymn/aion-backend/internal/routes"
+	"github.com/divinitymn/div-backend/internal/db"
+	"github.com/divinitymn/div-backend/internal/middlewares"
+	r "github.com/divinitymn/div-backend/internal/routes"
 
 	"github.com/go-playground/validator"
 	"github.com/labstack/echo/v4"

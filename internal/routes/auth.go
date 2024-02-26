@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/divinitymn/aion-backend/internal/handlers"
+	"github.com/divinitymn/div-backend/internal/handlers"
 
 	"github.com/labstack/echo/v4"
 )

@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/divinitymn/aion-backend/internal/models"
+	"github.com/divinitymn/div-backend/internal/models"
 
 	"github.com/labstack/echo/v4"
 )

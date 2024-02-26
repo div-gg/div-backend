@@ -1,4 +1,4 @@
-module github.com/divinitymn/aion-backend
+module github.com/divinitymn/div-backend
 
 go 1.21.4
 

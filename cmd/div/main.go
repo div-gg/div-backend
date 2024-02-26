@@ -1,7 +1,7 @@
 package main
 
 import (
-  "github.com/divinitymn/aion-backend/internal/cmd"
+  "github.com/divinitymn/div-backend/internal/cmd"
 )
 
 func main() {

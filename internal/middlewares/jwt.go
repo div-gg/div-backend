@@ -8,8 +8,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/divinitymn/aion-backend/internal/models"
-	"github.com/divinitymn/aion-backend/internal/utils"
+	"github.com/divinitymn/div-backend/internal/models"
+	"github.com/divinitymn/div-backend/internal/utils"
 )
 
 func VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
