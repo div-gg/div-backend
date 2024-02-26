@@ -25,10 +25,10 @@ func PostGetAll(c echo.Context) error {
 	filter := bson.D{}
 
 	cursor, err := db.GetCollection("posts").Find(
-    context.TODO(),
-    filter,
-    opts,
-  )
+		context.TODO(),
+		filter,
+		opts,
+	)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func PostCreate(c echo.Context) error {
 	data["updated_at"] = time.Now()
 	data["created_user"] = c.Get("userId")
 	data["updated_user"] = c.Get("userId")
-  if post.ExpireAfter == 0 {
+	if post.ExpireAfter == 0 {
 		data["expire_at"] = time.Now().Add(time.Duration(post.ExpireAfter) * time.Hour)
 	} else {
 		data["expire_at"] = time.Now().Add(time.Duration(6) * time.Hour)
@@ -132,13 +132,10 @@ func PostCreate(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(
-		http.StatusCreated,
-		models.Response{
-			Status:  http.StatusCreated,
-			Message: "Post created successfully",
-		},
-	)
+	return c.JSON(http.StatusCreated, models.Response{
+		Status:  http.StatusCreated,
+		Message: "Post created successfully",
+	})
 }
 
 type PostUpdateBody struct {
@@ -160,7 +157,7 @@ func PostUpdateByID(c echo.Context) error {
 	if err := c.Bind(post); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  http.StatusBadRequest,
-			Message: "Invalid request",
+			Message: "Invalid request body",
 		})
 	}
 
@@ -187,13 +184,10 @@ func PostUpdateByID(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(
-		http.StatusOK,
-		models.Response{
-			Status:  http.StatusOK,
-			Message: "Post updated successfully",
-		},
-	)
+	return c.JSON(http.StatusOK, models.Response{
+		Status:  http.StatusOK,
+		Message: "Post updated successfully",
+	})
 }
 
 func PostDeleteByID(c echo.Context) error {
@@ -205,18 +199,16 @@ func PostDeleteByID(c echo.Context) error {
 		})
 	}
 
-	filter := bson.M{"_id": id}
-
-	_, err = db.GetCollection("posts").DeleteOne(context.TODO(), filter)
+	_, err = db.GetCollection("posts").DeleteOne(
+		context.TODO(),
+		bson.M{"_id": id},
+	)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(
-		http.StatusOK,
-		models.Response{
-			Status:  http.StatusOK,
-			Message: "Post deleted successfully",
-		},
-	)
+	return c.JSON(http.StatusOK, models.Response{
+		Status:  http.StatusOK,
+		Message: "Post deleted successfully",
+	})
 }
