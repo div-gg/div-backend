@@ -18,14 +18,15 @@ import (
 
 func TournamentGetAll(c echo.Context) error {
 	page, limit := utils.GetPaginationValues(c)
-
-	sort := bson.M{"updated_at": -1}
-	opts := options.Find().SetSort(sort).SetSkip(page).SetLimit(limit)
-	filter := bson.D{}
+	opts := options.
+    Find().
+    SetSort(bson.M{"updated_at": -1}).
+    SetSkip(page).
+    SetLimit(limit)
 
 	cursor, err := db.GetCollection("tournaments").Find(
     c.Request().Context(),
-		filter,
+		bson.D{},
 		opts,
 	)
 	if err != nil {
@@ -68,11 +69,10 @@ func TournamentGetByID(c echo.Context) error {
 
 	var result models.Tournament
 
-	err = db.GetCollection("tournaments").FindOne(
+	if err = db.GetCollection("tournaments").FindOne(
     c.Request().Context(),
 		bson.M{"_id": id},
-	).Decode(&result)
-	if err != nil {
+	).Decode(&result); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return c.JSON(http.StatusNotFound, models.Response{
 				Status:  http.StatusNotFound,
@@ -80,7 +80,10 @@ func TournamentGetByID(c echo.Context) error {
 			})
 		}
 
-		return err
+    return c.JSON(http.StatusInternalServerError, models.Response{
+      Status:  http.StatusInternalServerError,
+      Message: "Failed to retrieve tournament",
+    })
 	}
 
 	return c.JSON(http.StatusOK, models.Response{
@@ -115,8 +118,7 @@ func TournamentCreate(c echo.Context) error {
 	data["created_user"] = c.Get("userId")
 	data["updated_user"] = c.Get("userId")
 
-	_, err := db.GetCollection("tournaments").InsertOne(c.Request().Context(), data)
-	if err != nil {
+	if _, err := db.GetCollection("tournaments").InsertOne(c.Request().Context(), data); err != nil {
 		return err
 	}
 
@@ -163,12 +165,11 @@ func TournamentUpdateByID(c echo.Context) error {
 	data["updated_at"] = time.Now()
 	data["updated_user"] = c.Get("userId")
 
-	_, err = db.GetCollection("tournaments").UpdateByID(
+	if _, err = db.GetCollection("tournaments").UpdateByID(
     c.Request().Context(),
 		id,
 		bson.M{"$set": data},
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
@@ -187,11 +188,10 @@ func TournamentDeleteByID(c echo.Context) error {
 		})
 	}
 
-	_, err = db.GetCollection("tournaments").DeleteOne(
+	if _, err = db.GetCollection("tournaments").DeleteOne(
     c.Request().Context(),
 		bson.M{"_id": id},
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
