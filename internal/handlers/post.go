@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"time"
@@ -20,13 +19,15 @@ import (
 func PostGetAll(c echo.Context) error {
 	page, limit := utils.GetPaginationValues(c)
 
-	sort := bson.D{primitive.E{Key: "updated_at", Value: -1}}
-	opts := options.Find().SetSort(sort).SetSkip(page).SetLimit(limit)
-	filter := bson.D{}
+	opts := options.
+		Find().
+		SetSort(bson.M{"updated_at": 1}).
+		SetSkip(page).
+		SetLimit(limit)
 
 	cursor, err := db.GetCollection("posts").Find(
-		context.TODO(),
-		filter,
+		c.Request().Context(),
+		bson.M{},
 		opts,
 	)
 	if err != nil {
@@ -34,7 +35,7 @@ func PostGetAll(c echo.Context) error {
 	}
 
 	var results []models.Post
-	if err = cursor.All(context.TODO(), &results); err != nil {
+	if err = cursor.All(c.Request().Context(), &results); err != nil {
 		return err
 	}
 
@@ -70,7 +71,7 @@ func PostGetByID(c echo.Context) error {
 	var result models.Post
 
 	err = db.GetCollection("posts").FindOne(
-		context.TODO(),
+		c.Request().Context(),
 		bson.M{"_id": id},
 	).Decode(&result)
 	if err != nil {
@@ -127,8 +128,7 @@ func PostCreate(c echo.Context) error {
 		data["expire_at"] = time.Now().Add(time.Duration(6) * time.Hour)
 	}
 
-	_, err := db.GetCollection("posts").InsertOne(context.TODO(), data)
-	if err != nil {
+	if _, err := db.GetCollection("posts").InsertOne(c.Request().Context(), data); err != nil {
 		return err
 	}
 
@@ -176,7 +176,7 @@ func PostUpdateByID(c echo.Context) error {
 	data["updated_user"] = c.Get("userId")
 
 	_, err = db.GetCollection("posts").UpdateByID(
-		context.TODO(),
+		c.Request().Context(),
 		id,
 		bson.M{"$set": data},
 	)
@@ -199,11 +199,10 @@ func PostDeleteByID(c echo.Context) error {
 		})
 	}
 
-	_, err = db.GetCollection("posts").DeleteOne(
-		context.TODO(),
+	if _, err = db.GetCollection("posts").DeleteOne(
+		c.Request().Context(),
 		bson.M{"_id": id},
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 

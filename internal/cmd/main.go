@@ -6,6 +6,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/divinitymn/div-backend/internal/db"
+	"github.com/divinitymn/div-backend/internal/config"
 )
 
 func Execute() {
@@ -13,7 +14,7 @@ func Execute() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-
+  config.InitEnv()
 	db.InitDB()
 	InitAPI()
 }

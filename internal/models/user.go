@@ -17,6 +17,11 @@ type User struct {
 	Username  string `bson:"username" json:"username" validate:"required"`
 	Password  string `bson:"password" json:"password" validate:"required"`
 
+  DiscordID string `bson:"discord_id" json:"discord_id"`
+  DiscordName string `bson:"discord_name" json:"discord_name"`
+  RiotID string `bson:"riot_id" json:"riot_id"`
+  RiotName string `bson:"riot_name" json:"riot_name"`
+
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
 }

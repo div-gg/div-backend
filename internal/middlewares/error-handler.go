@@ -9,8 +9,7 @@ import (
 
 func ErrorHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		err := next(c)
-		if err != nil {
+		if err := next(c); err != nil {
 			c.Logger().Error(err)
 			return c.JSON(http.StatusInternalServerError, models.Response{
 				Status:  http.StatusInternalServerError,

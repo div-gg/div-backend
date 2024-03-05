@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-  "log"
 
 	"github.com/labstack/echo/v4"
 
@@ -25,9 +24,9 @@ func VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 
 		claims := utils.ParseToken(token[1])
 		valid := claims.VerifyExpiresAt(time.Now().Unix(), true)
-    log.Println(claims)
 
     c.Set("userId", claims["id"])
+    c.Set("roles", claims["roles"])
 
 		if valid {
 			return next(c)

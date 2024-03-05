@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
-	// "go.mongodb.org/mongo-driver/mongo"
 )
 
 type ProfileUpdateBody struct {
@@ -51,12 +49,11 @@ func ProfileUpdate(c echo.Context) error {
 
 	data["updated_at"] = time.Now()
 
-	_, err := db.GetCollection("users").UpdateByID(
-		context.TODO(),
+	if _, err := db.GetCollection("users").UpdateByID(
+    c.Request().Context(),
 		id,
 		bson.M{"$set": data},
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 

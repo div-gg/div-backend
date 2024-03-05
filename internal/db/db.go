@@ -3,7 +3,8 @@ package db
 import (
 	"context"
 	"log"
-	"os"
+
+  "github.com/divinitymn/div-backend/internal/config"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +15,7 @@ var Client *mongo.Client
 
 func InitDB() {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(os.Getenv("DB_URL")).SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI(config.Env.DbURL).SetServerAPIOptions(serverAPI)
 
 	client, err := mongo.Connect(context.Background(), opts)
 	if err != nil {
@@ -55,5 +56,5 @@ func InitDB() {
 }
 
 func GetCollection(collectionName string) *mongo.Collection {
-	return Client.Database(os.Getenv("DB_NAME")).Collection(collectionName)
+	return Client.Database(config.Env.DbName).Collection(collectionName)
 }

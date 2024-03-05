@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -44,11 +42,10 @@ func RegisterHandler(c echo.Context) error {
 		r.Password = hashedPassword
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err := db.GetCollection("users").InsertOne(ctx, r)
-	if err != nil {
+	if _, err := db.GetCollection("users").InsertOne(
+    c.Request().Context(),
+    r,
+  ); err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return c.JSON(http.StatusConflict, models.Response{
 				Status:  http.StatusConflict,
@@ -56,7 +53,10 @@ func RegisterHandler(c echo.Context) error {
 			})
 		}
 
-		return err
+    return c.JSON(http.StatusInternalServerError, models.Response{
+      Status:  http.StatusInternalServerError,
+      Message: "Failed to register",
+    })
 	}
 
 	return c.JSON(http.StatusCreated, models.Response{
@@ -71,23 +71,24 @@ type LoginRequest struct {
 }
 
 func LoginHandler(c echo.Context) error {
-	r := LoginRequest{}
+	data := LoginRequest{}
 
-	if err := c.Bind(&r); err != nil {
+	if err := c.Bind(&data); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
-	if err := c.Validate(&r); err != nil {
-		return err
+	if err := c.Validate(&data); err != nil {
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	var result models.User
-	filter := bson.D{primitive.E{Key: "username", Value: r.Username}}
 
-	err := db.GetCollection("users").FindOne(ctx, filter).Decode(&result)
-	if err != nil {
+	if err := db.GetCollection("users").FindOne(
+    c.Request().Context(),
+		bson.M{"username": data.Username},
+	).Decode(&result); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return c.JSON(http.StatusUnauthorized, models.Response{
 				Status:  http.StatusUnauthorized,
@@ -95,12 +96,18 @@ func LoginHandler(c echo.Context) error {
 			})
 		}
 
-		return err
+    return c.JSON(http.StatusInternalServerError, models.Response{
+      Status:  http.StatusInternalServerError,
+      Message: "Failed to login",
+    })
 	}
 
-	match, _, err := utils.CheckHash(r.Password, result.Password)
+	match, _, err := utils.CheckHash(data.Password, result.Password)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusUnauthorized, models.Response{
+			Status:  http.StatusUnauthorized,
+			Message: "Wrong password",
+		})
 	}
 
 	if match {
@@ -109,16 +116,13 @@ func LoginHandler(c echo.Context) error {
 			return err
 		}
 
-		return c.JSON(
-			http.StatusOK,
-			models.Response{
-				Status:  http.StatusOK,
-				Message: "Login success",
-				Data: map[string]string{
-					"token": token,
-				},
+		return c.JSON(http.StatusOK, models.Response{
+			Status:  http.StatusOK,
+			Message: "Login success",
+			Data: map[string]string{
+				"token": token,
 			},
-		)
+		})
 	}
 
 	return c.JSON(http.StatusUnauthorized, models.Response{

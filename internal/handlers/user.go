@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -37,11 +36,12 @@ func UserGetByID(c echo.Context) error {
 		})
 	}
 
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
 	var result UserResponse
 
-	err = db.GetCollection("users").FindOne(context.TODO(), filter).Decode(&result)
-	if err != nil {
+	if err = db.GetCollection("users").FindOne(
+    c.Request().Context(),
+		bson.M{"_id": id},
+	).Decode(&result); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return c.JSON(http.StatusNotFound, models.Response{
 				Status:  http.StatusNotFound,
@@ -58,44 +58,73 @@ func UserGetByID(c echo.Context) error {
 	})
 }
 
-type UserUpdateBody struct {
-  Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
-  FirstName string `bson:"firstname" json:"firstname" validate:"required"`
-  LastName  string `bson:"lastname" json:"lastname" validate:"required"`
-  Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
-  Email     string `bson:"email" json:"email" validate:"required,email"`
+func UserGetMe(c echo.Context) error {
+	id := c.Get("userId")
 
+	var r UserResponse
+
+	if err := db.GetCollection("users").FindOne(
+    c.Request().Context(),
+		bson.M{"_id": id},
+	).Decode(&r); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.JSON(http.StatusNotFound, models.Response{
+				Status:  http.StatusNotFound,
+				Message: "User not found",
+			})
+		}
+
+		return err
+	}
+
+	return c.JSON(http.StatusOK, models.Response{
+		Status:  http.StatusOK,
+		Message: "User retrieved successfully",
+		Data:    r,
+	})
+}
+
+type UserUpdateBody struct {
+	Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
+	FirstName string `bson:"firstname" json:"firstname" validate:"required"`
+	LastName  string `bson:"lastname" json:"lastname" validate:"required"`
+	Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
+	Email     string `bson:"email" json:"email" validate:"required,email"`
 }
 
 func UserUpdateByID(c echo.Context) error {
-  id, err := primitive.ObjectIDFromHex(c.Param("id"))
-  if err != nil {
-    return c.JSON(http.StatusBadRequest, models.Response{
-      Status:  http.StatusBadRequest,
-      Message: "Invalid ID",
-    })
-  }
+	id, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid ID",
+		})
+	}
 
-  var user models.User
-  if err := c.Bind(&user); err != nil {
-    return c.JSON(http.StatusBadRequest, models.Response{
-      Status:  http.StatusBadRequest,
-      Message: "Invalid request",
-    })
-  }
+	var user models.User
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid request",
+		})
+	}
 
-  user.UpdatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 
-  filter := bson.D{primitive.E{Key: "_id", Value: id}}
-  update := bson.D{primitive.E{Key: "$set", Value: user}}
+	filter := bson.D{primitive.E{Key: "_id", Value: id}}
+	update := bson.D{primitive.E{Key: "$set", Value: user}}
 
-  _, err = db.GetCollection("users").UpdateOne(context.TODO(), filter, update)
-  if err != nil {
-    return err
-  }
+	_, err = db.GetCollection("users").UpdateOne(
+    c.Request().Context(),
+    filter,
+    update,
+  )
+	if err != nil {
+		return err
+	}
 
-  return c.JSON(http.StatusOK, models.Response{
-    Status:  http.StatusOK,
-    Message: "User updated successfully",
-  })
+	return c.JSON(http.StatusOK, models.Response{
+		Status:  http.StatusOK,
+		Message: "User updated successfully",
+	})
 }

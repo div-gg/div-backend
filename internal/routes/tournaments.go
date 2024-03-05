@@ -8,10 +8,10 @@ import (
 )
 
 func RegisterTournamentRoutes(e *echo.Group) {
-  tournament := e.Group("/tournament")
+  tournament := e.Group("/tournaments")
 
   tournament.GET("", handlers.TournamentGetAll)
-  tournament.GET("", handlers.TournamentCreate, middlewares.VerifyToken)
+  tournament.POST("", handlers.TournamentCreate, middlewares.VerifyToken)
 
   tournament.GET("/:id", handlers.TournamentGetByID)
   tournament.PUT("/:id", handlers.TournamentUpdateByID, middlewares.VerifyToken)

@@ -11,4 +11,5 @@ func RegisterAuthRoutes(e *echo.Group) {
 
 	auth.POST("/register", handlers.RegisterHandler)
 	auth.POST("/login", handlers.LoginHandler)
+	auth.GET("/discord/callback", handlers.DiscordCallbackHandler)
 }

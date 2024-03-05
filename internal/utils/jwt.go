@@ -2,8 +2,9 @@ package utils
 
 import (
 	"log"
-	"os"
 	"time"
+
+  "github.com/divinitymn/div-backend/internal/config"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -16,12 +17,12 @@ func CreateToken(data string) (string, error) {
 			"exp": time.Now().Add(time.Hour * 24).Unix(),
 		})
 
-	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+  return token.SignedString([]byte(config.Env.JWTSecret))
 }
 
 func ParseToken(token string) jwt.MapClaims {
 	parsedToken, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
+		return []byte(config.Env.JWTSecret), nil
 	})
 
 	if err != nil {
