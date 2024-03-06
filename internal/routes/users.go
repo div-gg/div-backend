@@ -12,6 +12,7 @@ func RegisterUserRoutes(e *echo.Group) {
 
 	users.GET("/:id", handlers.UserGetByID)
   users.GET("/me", handlers.UserGetMe, middlewares.VerifyToken)
+  users.PUT("/me", handlers.UserUpdateMe, middlewares.VerifyToken)
   // users.PUT("/:id", handlers.UserUpdateByID, middlewares.VerifyToken)
   // users.DELETE("/:id", handlers.UserDeleteByID, middlewares.VerifyToken)
 }

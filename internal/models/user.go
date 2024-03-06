@@ -7,21 +7,21 @@ import (
 )
 
 type User struct {
-	ID primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	ID primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 
 	Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
-	FirstName string `bson:"firstname" json:"firstname" validate:"required"`
-	LastName  string `bson:"lastname" json:"lastname" validate:"required"`
+	FirstName string `bson:"firstname,omitempty" json:"firstname,omitempty" validate:"required"`
+	LastName  string `bson:"lastname,omitempty" json:"lastname,omitempty" validate:"required"`
 	Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
-	Email     string `bson:"email" json:"email" validate:"required,email"`
-	Username  string `bson:"username" json:"username" validate:"required"`
-	Password  string `bson:"password" json:"password" validate:"required"`
+	Email     string `bson:"email,omitempty" json:"email,omitempty" validate:"required,email"`
+	Username  string `bson:"username,omitempty" json:"username,omitempty" validate:"required"`
+	Password  string `bson:"password,omitempty" json:"password,omitempty" validate:"required"`
 
-  DiscordID string `bson:"discord_id" json:"discord_id"`
-  DiscordName string `bson:"discord_name" json:"discord_name"`
-  RiotID string `bson:"riot_id" json:"riot_id"`
-  RiotName string `bson:"riot_name" json:"riot_name"`
+	DiscordID   string `bson:"discord_id,omitempty" json:"discord_id,omitempty"`
+	DiscordName string `bson:"discord_name,omitempty" json:"discord_name,omitempty"`
+	RiotID      string `bson:"riot_id,omitempty" json:"riot_id,omitempty"`
+	RiotName    string `bson:"riot_name,omitempty" json:"riot_name,omitempty"`
 
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	CreatedAt time.Time `bson:"created_at,omitempty" json:"created_at,omitempty"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
 }

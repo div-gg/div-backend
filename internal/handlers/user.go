@@ -39,7 +39,7 @@ func UserGetByID(c echo.Context) error {
 	var result UserResponse
 
 	if err = db.GetCollection("users").FindOne(
-    c.Request().Context(),
+		c.Request().Context(),
 		bson.M{"_id": id},
 	).Decode(&result); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -59,13 +59,19 @@ func UserGetByID(c echo.Context) error {
 }
 
 func UserGetMe(c echo.Context) error {
-	id := c.Get("userId")
+	id, err := primitive.ObjectIDFromHex(c.Get("userId").(string))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: "Invalid ID",
+		})
+	}
 
 	var r UserResponse
 
 	if err := db.GetCollection("users").FindOne(
-    c.Request().Context(),
-		bson.M{"_id": id},
+		c.Request().Context(),
+    bson.M{"_id": id},
 	).Decode(&r); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return c.JSON(http.StatusNotFound, models.Response{
@@ -92,8 +98,8 @@ type UserUpdateBody struct {
 	Email     string `bson:"email" json:"email" validate:"required,email"`
 }
 
-func UserUpdateByID(c echo.Context) error {
-	id, err := primitive.ObjectIDFromHex(c.Param("id"))
+func UserUpdateMe(c echo.Context) error {
+	id, err := primitive.ObjectIDFromHex(c.Get("userId").(string))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  http.StatusBadRequest,
@@ -111,15 +117,11 @@ func UserUpdateByID(c echo.Context) error {
 
 	user.UpdatedAt = time.Now()
 
-	filter := bson.D{primitive.E{Key: "_id", Value: id}}
-	update := bson.D{primitive.E{Key: "$set", Value: user}}
-
-	_, err = db.GetCollection("users").UpdateOne(
-    c.Request().Context(),
-    filter,
-    update,
-  )
-	if err != nil {
+	if _, err = db.GetCollection("users").UpdateOne(
+		c.Request().Context(),
+    bson.M{"_id": id},
+    bson.M{"$set": user},
+	); err != nil {
 		return err
 	}
 

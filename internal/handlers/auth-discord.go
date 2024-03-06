@@ -72,7 +72,6 @@ func DiscordCallbackHandler(c echo.Context) error {
 			user := models.User{
 				DiscordID: userInfo["id"].(string),
         DiscordName: userInfo["global_name"].(string),
-				Username:  userInfo["username"].(string),
 				Email:     userInfo["email"].(string),
 				Avatar:    "https://cdn.discordapp.com/avatars/" + userInfo["id"].(string) + "/" + userInfo["avatar"].(string) + ".png",
 				CreatedAt: time.Now(),
@@ -88,7 +87,7 @@ func DiscordCallbackHandler(c echo.Context) error {
 				})
 			}
 
-			token, err := utils.CreateToken(cUser.InsertedID.(primitive.ObjectID).String())
+			token, err := utils.CreateToken(cUser.InsertedID.(primitive.ObjectID).Hex())
 			if err != nil {
 				return c.JSON(http.StatusInternalServerError, models.Response{
 					Status:  http.StatusInternalServerError,
@@ -128,7 +127,7 @@ func DiscordCallbackHandler(c echo.Context) error {
     }
   }
 
-  token, err := utils.CreateToken(r.ID.String())
+  token, err := utils.CreateToken(r.ID.Hex())
   if err != nil {
     return c.JSON(http.StatusInternalServerError, models.Response{
       Status:  http.StatusInternalServerError,
