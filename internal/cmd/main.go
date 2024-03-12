@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	// "log"
 
 	"github.com/joho/godotenv"
 
@@ -10,9 +10,10 @@ import (
 )
 
 func Execute() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
+  _ = godotenv.Load()
 
   config.InitEnv()
 	db.InitDB()
