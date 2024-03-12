@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+  "fmt"
 
 	"github.com/divinitymn/div-backend/internal/db"
 	"github.com/divinitymn/div-backend/internal/middlewares"
@@ -33,7 +34,7 @@ func InitAPI() *echo.Echo {
 
 	// Start server
 	go func() {
-		if err := e.Start(os.Getenv("PORT")); err != nil && err != http.ErrServerClosed {
+		if err := e.Start(fmt.Sprintf(":%s", os.Getenv("PORT"))); err != nil && err != http.ErrServerClosed {
       e.Logger.Fatal(err)
 			e.Logger.Fatal("Shutting down the server")
 		}
