@@ -33,7 +33,7 @@ func InitAPI() *echo.Echo {
 
 	// Start server
 	go func() {
-		if err := e.Start(":1323"); err != nil && err != http.ErrServerClosed {
+		if err := e.Start(os.Getenv("PORT")); err != nil && err != http.ErrServerClosed {
       e.Logger.Fatal(err)
 			e.Logger.Fatal("Shutting down the server")
 		}
