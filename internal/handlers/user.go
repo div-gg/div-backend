@@ -223,16 +223,16 @@ func UserChangePasswordMe(c echo.Context) error {
     })
   }
 
-  if r.Password == "" {
-    if hashedPassword, err := utils.CreateHash(body.NewPassword, utils.DefaultParams); err != nil {
-      return c.JSON(http.StatusInternalServerError, models.Response{
-        Status:  http.StatusInternalServerError,
-        Message: "Failed to hash password",
-      })
-    } else {
-      body.NewPassword = hashedPassword
-    }
+  if hashedPassword, err := utils.CreateHash(body.NewPassword, utils.DefaultParams); err != nil {
+    return c.JSON(http.StatusInternalServerError, models.Response{
+      Status:  http.StatusInternalServerError,
+      Message: "Failed to hash password",
+    })
+  } else {
+    body.NewPassword = hashedPassword
+  }
 
+  if r.Password == "" {
     if _, err := db.GetCollection("users").UpdateOne(
       c.Request().Context(),
       bson.M{"_id": id},
@@ -251,7 +251,6 @@ func UserChangePasswordMe(c echo.Context) error {
 
   match, _, err := utils.CheckHash(body.Password, r.Password)
   if err != nil {
-    log.Println(err)
     return err
   }
 
