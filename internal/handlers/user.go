@@ -6,6 +6,7 @@ import (
 
 	"github.com/divinitymn/div-backend/internal/db"
 	"github.com/divinitymn/div-backend/internal/models"
+	"github.com/divinitymn/div-backend/internal/utils"
 
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
@@ -71,7 +72,7 @@ func UserGetMe(c echo.Context) error {
 
 	if err := db.GetCollection("users").FindOne(
 		c.Request().Context(),
-    bson.M{"_id": id},
+		bson.M{"_id": id},
 	).Decode(&r); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return c.JSON(http.StatusNotFound, models.Response{
@@ -90,12 +91,13 @@ func UserGetMe(c echo.Context) error {
 	})
 }
 
-type UserUpdateBody struct {
+type UserUpdateMeBody struct {
 	Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
-	FirstName string `bson:"firstname" json:"firstname" validate:"required"`
-	LastName  string `bson:"lastname" json:"lastname" validate:"required"`
+	FirstName string `bson:"firstname,omitempty" json:"firstname,omitempty"`
+	LastName  string `bson:"lastname,omitempty" json:"lastname,omitempty"`
+	Username  string `bson:"username" json:"username" validate:"required"`
 	Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
-	Email     string `bson:"email" json:"email" validate:"required,email"`
+	Password  string `bson:"password" json:"password" validate:"required"`
 }
 
 func UserUpdateMe(c echo.Context) error {
@@ -107,26 +109,73 @@ func UserUpdateMe(c echo.Context) error {
 		})
 	}
 
-	var user models.User
-	if err := c.Bind(&user); err != nil {
+	var r UserUpdateMeBody
+	if err := c.Bind(&r); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  http.StatusBadRequest,
 			Message: "Invalid request",
 		})
 	}
 
-	user.UpdatedAt = time.Now()
+	var foundUser models.User
 
-	if _, err = db.GetCollection("users").UpdateOne(
+	if err := db.GetCollection("users").FindOne(
 		c.Request().Context(),
-    bson.M{"_id": id},
-    bson.M{"$set": user},
-	); err != nil {
-		return err
+		bson.M{"_id": id},
+	).Decode(&foundUser); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.JSON(http.StatusNotFound, models.Response{
+				Status:  http.StatusNotFound,
+				Message: "User not found",
+			})
+		}
+
+		return c.JSON(http.StatusInternalServerError, models.Response{
+			Status:  http.StatusInternalServerError,
+			Message: "Failed to login",
+		})
 	}
 
-	return c.JSON(http.StatusOK, models.Response{
-		Status:  http.StatusOK,
-		Message: "User updated successfully",
+	match, _, err := utils.CheckHash(r.Password, foundUser.Password)
+	if err != nil {
+		return c.JSON(http.StatusForbidden, models.Response{
+			Status:  http.StatusForbidden,
+			Message: "Wrong password",
+		})
+	}
+
+	if match {
+		data := bson.M{}
+
+		data["avatar"] = r.Avatar
+		data["firstname"] = r.FirstName
+		data["lastname"] = r.LastName
+		data["username"] = r.Username
+		data["bio"] = r.Bio
+
+		if _, err := db.GetCollection("users").UpdateOne(
+			c.Request().Context(),
+			bson.M{"_id": id},
+			bson.M{"$set": data},
+		); err != nil {
+			if mongo.IsDuplicateKeyError(err) {
+				return c.JSON(http.StatusBadRequest, models.Response{
+					Status:  http.StatusBadRequest,
+					Message: "Username already exists",
+				})
+			}
+
+			return err
+		}
+
+		return c.JSON(http.StatusOK, models.Response{
+			Status:  http.StatusOK,
+			Message: "User updated successfully",
+		})
+	}
+
+	return c.JSON(http.StatusForbidden, models.Response{
+		Status:  http.StatusForbidden,
+		Message: "Wrong password",
 	})
 }

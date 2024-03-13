@@ -90,8 +90,8 @@ func LoginHandler(c echo.Context) error {
 		bson.M{"username": data.Username},
 	).Decode(&result); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return c.JSON(http.StatusUnauthorized, models.Response{
-				Status:  http.StatusUnauthorized,
+			return c.JSON(http.StatusNotFound, models.Response{
+				Status:  http.StatusNotFound,
 				Message: "User not found",
 			})
 		}
@@ -104,14 +104,14 @@ func LoginHandler(c echo.Context) error {
 
 	match, _, err := utils.CheckHash(data.Password, result.Password)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, models.Response{
-			Status:  http.StatusUnauthorized,
+		return c.JSON(http.StatusForbidden, models.Response{
+			Status:  http.StatusForbidden,
 			Message: "Wrong password",
 		})
 	}
 
 	if match {
-		token, err := utils.CreateToken(result.ID.String())
+		token, err := utils.CreateToken(result.ID.Hex())
 		if err != nil {
 			return err
 		}
@@ -125,8 +125,8 @@ func LoginHandler(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusUnauthorized, models.Response{
-		Status:  http.StatusUnauthorized,
+	return c.JSON(http.StatusForbidden, models.Response{
+		Status:  http.StatusForbidden,
 		Message: "Wrong password",
 	})
 }
