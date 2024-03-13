@@ -14,13 +14,12 @@ import (
 )
 
 type RegisterRequest struct {
-	FirstName string    `bson:"firstname" json:"firstname" validate:"required"`
-	LastName  string    `bson:"lastname" json:"lastname" validate:"required"`
-	Email     string    `bson:"email" json:"email" validate:"required,email"`
-	Username  string    `bson:"username" json:"username" validate:"required"`
-	Password  string    `bson:"password" json:"password" validate:"required"`
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+	DisplayName string    `bson:"displayname" json:"displayname" validate:"required"`
+	Email       string    `bson:"email" json:"email" validate:"required,email"`
+	Username    string    `bson:"username" json:"username" validate:"required"`
+	Password    string    `bson:"password" json:"password" validate:"required"`
+	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`
 }
 
 func RegisterHandler(c echo.Context) error {
@@ -37,15 +36,18 @@ func RegisterHandler(c echo.Context) error {
 	}
 
 	if hashedPassword, err := utils.CreateHash(r.Password, utils.DefaultParams); err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, models.Response{
+			Status:  http.StatusInternalServerError,
+			Message: "Failed to hash password",
+		})
 	} else {
 		r.Password = hashedPassword
 	}
 
 	if _, err := db.GetCollection("users").InsertOne(
-    c.Request().Context(),
-    r,
-  ); err != nil {
+		c.Request().Context(),
+		r,
+	); err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return c.JSON(http.StatusConflict, models.Response{
 				Status:  http.StatusConflict,
@@ -53,10 +55,10 @@ func RegisterHandler(c echo.Context) error {
 			})
 		}
 
-    return c.JSON(http.StatusInternalServerError, models.Response{
-      Status:  http.StatusInternalServerError,
-      Message: "Failed to register",
-    })
+		return c.JSON(http.StatusInternalServerError, models.Response{
+			Status:  http.StatusInternalServerError,
+			Message: "Failed to register",
+		})
 	}
 
 	return c.JSON(http.StatusCreated, models.Response{
@@ -86,7 +88,7 @@ func LoginHandler(c echo.Context) error {
 	var result models.User
 
 	if err := db.GetCollection("users").FindOne(
-    c.Request().Context(),
+		c.Request().Context(),
 		bson.M{"username": data.Username},
 	).Decode(&result); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -96,10 +98,10 @@ func LoginHandler(c echo.Context) error {
 			})
 		}
 
-    return c.JSON(http.StatusInternalServerError, models.Response{
-      Status:  http.StatusInternalServerError,
-      Message: "Failed to login",
-    })
+		return c.JSON(http.StatusInternalServerError, models.Response{
+			Status:  http.StatusInternalServerError,
+			Message: "Failed to login",
+		})
 	}
 
 	match, _, err := utils.CheckHash(data.Password, result.Password)

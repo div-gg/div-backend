@@ -15,4 +15,6 @@ func RegisterUserRoutes(e *echo.Group) {
   users.PUT("/me", handlers.UserUpdateMe, middlewares.VerifyToken)
   // users.PUT("/:id", handlers.UserUpdateByID, middlewares.VerifyToken)
   // users.DELETE("/:id", handlers.UserDeleteByID, middlewares.VerifyToken)
+
+  users.POST("/me/change-password", handlers.UserChangePasswordMe, middlewares.VerifyToken)
 }

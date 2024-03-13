@@ -12,11 +12,10 @@ import (
 )
 
 type ProfileUpdateBody struct {
-	Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
-	Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
-	FirstName string `bson:"firstname,omitempty" json:"firstname,omitempty"`
-	LastName  string `bson:"lastname,omitempty" json:"lastname,omitempty"`
-	Email     string `bson:"email,omitempty" json:"email,omitempty"`
+	Avatar      string `bson:"avatar,omitempty" json:"avatar,omitempty"`
+	Bio         string `bson:"bio,omitempty" json:"bio,omitempty"`
+	DisplayName string `bson:"displayname,omitempty" json:"displayname,omitempty"`
+	Email       string `bson:"email,omitempty" json:"email,omitempty"`
 }
 
 func ProfileUpdate(c echo.Context) error {
@@ -37,11 +36,8 @@ func ProfileUpdate(c echo.Context) error {
 	if user.Bio != "" {
 		data["bio"] = user.Bio
 	}
-	if user.FirstName != "" {
-		data["firstname"] = user.FirstName
-	}
-	if user.LastName != "" {
-		data["lastname"] = user.LastName
+	if user.DisplayName != "" {
+		data["displayname"] = user.DisplayName
 	}
 	if user.Email != "" {
 		data["email"] = user.Email
@@ -50,7 +46,7 @@ func ProfileUpdate(c echo.Context) error {
 	data["updated_at"] = time.Now()
 
 	if _, err := db.GetCollection("users").UpdateByID(
-    c.Request().Context(),
+		c.Request().Context(),
 		id,
 		bson.M{"$set": data},
 	); err != nil {

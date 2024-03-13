@@ -9,7 +9,7 @@ import (
 func RegisterAuthRoutes(e *echo.Group) {
 	auth := e.Group("/auth")
 
-	auth.POST("/register", handlers.RegisterHandler)
 	auth.POST("/login", handlers.LoginHandler)
+  auth.POST("/register", handlers.RegisterHandler)
 	auth.GET("/discord/callback", handlers.DiscordCallbackHandler)
 }

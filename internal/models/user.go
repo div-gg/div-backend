@@ -10,8 +10,7 @@ type User struct {
 	ID primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 
 	Avatar    string `bson:"avatar,omitempty" json:"avatar,omitempty"`
-	FirstName string `bson:"firstname,omitempty" json:"firstname,omitempty" validate:"required"`
-	LastName  string `bson:"lastname,omitempty" json:"lastname,omitempty" validate:"required"`
+	DisplayName string `bson:"displayname,omitempty" json:"displayname,omitempty" validate:"required"`
 	Bio       string `bson:"bio,omitempty" json:"bio,omitempty"`
 	Email     string `bson:"email,omitempty" json:"email,omitempty" validate:"required,email"`
 	Username  string `bson:"username,omitempty" json:"username,omitempty" validate:"required"`
