@@ -13,28 +13,70 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	// "go.mongodb.org/mongo-driver/mongo/options"
 )
+
+type UserObject struct {
+	Avatar      string `bson:"avatar" json:"avatar"`
+	DisplayName string `bson:"displayname" json:"displayname"`
+	Username    string `bson:"username" json:"username"`
+}
+
+type PostResult struct {
+	ID primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+
+	Body  string `bson:"body" json:"body" validate:"required"`
+	Slots int    `bson:"slots" json:"slots" validate:"required"`
+	Game  string `bson:"game" json:"game" validate:"required,oneof=valorant cs2 lol"`
+
+	CreatedAt         time.Time          `bson:"created_at" json:"created_at"`
+	CreatedUserObject []UserObject         `bson:"created_user_object" json:"created_user_object"`
+	CreatedUser       primitive.ObjectID `bson:"created_user" json:"created_user"`
+	UpdatedAt         time.Time          `bson:"updated_at" json:"updated_at"`
+	UpdatedUser       primitive.ObjectID `bson:"updated_user" json:"updated_user"`
+	ExpireAt          time.Time          `bson:"expire_at" json:"expire_at"`
+}
 
 func PostGetAll(c echo.Context) error {
 	page, limit := utils.GetPaginationValues(c)
 
-	opts := options.
-		Find().
-		SetSort(bson.M{"updated_at": 1}).
-		SetSkip(page).
-		SetLimit(limit)
+	lookupStage := bson.D{
+		{Key: "$lookup", Value: bson.D{
+			{Key: "from", Value: "users"},
+			{Key: "localField", Value: "created_user"},
+			{Key: "foreignField", Value: "_id"},
+			{Key: "as", Value: "created_user_object"},
+		}},
+	}
+	unwindStage := bson.D{
+		{Key: "$unwind", Value: bson.D{
+			{Key: "path", Value: "$created_user"},
+			{Key: "preserveNullAndEmptyArrays", Value: true},
+		}},
+	}
+	sortStage := bson.D{
+		{Key: "$sort", Value: bson.D{
+			{Key: "updated_at", Value: -1},
+		}},
+	}
+	limitStage := bson.D{{Key: "$limit", Value: limit}}
+	skipStage := bson.D{{Key: "$skip", Value: page}}
 
-	cursor, err := db.GetCollection("posts").Find(
+	cursor, err := db.GetCollection("posts").Aggregate(
 		c.Request().Context(),
-		bson.M{},
-		opts,
+		mongo.Pipeline{
+			lookupStage,
+			unwindStage,
+			sortStage,
+			limitStage,
+			skipStage,
+		},
 	)
 	if err != nil {
 		return err
 	}
 
-	var results []models.Post
+	var results []PostResult
 	if err = cursor.All(c.Request().Context(), &results); err != nil {
 		return err
 	}
@@ -49,7 +91,7 @@ func PostGetAll(c echo.Context) error {
 	if results != nil {
 		data = results
 	} else {
-		data = []models.Post{}
+		data = []PostResult{}
 	}
 
 	return c.JSON(http.StatusOK, models.Response{
@@ -93,28 +135,36 @@ func PostGetByID(c echo.Context) error {
 }
 
 type PostCreateBody struct {
-	Body      string `bson:"body" json:"body" validate:"required"`
-	OpenSlots int    `bson:"open_slots" json:"open_slots" validate:"required"`
-	Game      string `bson:"game" json:"game" validate:"required, oneof=valorant csgo lol"`
-
-	ExpireAfter int `bson:"expire_after" json:"expire_after" validate:"required"`
+	Body  string `bson:"body" json:"body" validate:"required"`
+	Slots int    `bson:"slots" json:"slots" validate:"required"`
+	Game  string `bson:"game" json:"game" validate:"required,oneof=valorant cs2 lol"`
 }
 
 func PostCreate(c echo.Context) error {
-	post := new(PostCreateBody)
-	if err := c.Bind(post); err != nil {
-		return err
+	post := PostCreateBody{}
+	if err := c.Bind(&post); err != nil {
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
+	}
+
+	if err := c.Validate(&post); err != nil {
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
 	}
 
 	data := bson.M{}
 
-	if post.Body == "" {
+	if post.Body != "" {
 		data["body"] = post.Body
 	}
-	if post.OpenSlots == 0 {
-		data["open_slots"] = post.OpenSlots
+	if post.Slots != 0 {
+		data["slots"] = post.Slots
 	}
-	if post.Game == "" {
+	if post.Game != "" {
 		data["game"] = post.Game
 	}
 
@@ -122,13 +172,12 @@ func PostCreate(c echo.Context) error {
 	data["updated_at"] = time.Now()
 	data["created_user"] = c.Get("userId")
 	data["updated_user"] = c.Get("userId")
-	if post.ExpireAfter == 0 {
-		data["expire_at"] = time.Now().Add(time.Duration(post.ExpireAfter) * time.Hour)
-	} else {
-		data["expire_at"] = time.Now().Add(time.Duration(6) * time.Hour)
-	}
+	data["expire_at"] = time.Now().Add(time.Duration(6) * time.Hour)
 
-	if _, err := db.GetCollection("posts").InsertOne(c.Request().Context(), data); err != nil {
+	if _, err := db.GetCollection("posts").InsertOne(
+		c.Request().Context(),
+		data,
+	); err != nil {
 		return err
 	}
 
@@ -139,9 +188,9 @@ func PostCreate(c echo.Context) error {
 }
 
 type PostUpdateBody struct {
-	Body      string `bson:"body,omitempty" json:"body,omitempty"`
-	OpenSlots int    `bson:"open_slots,omitempty" json:"open_slots,omitempty"`
-	Game      string `bson:"game,omitempty" json:"game,omitempty" validate:"oneof=valorant csgo lol"`
+	Body  string `bson:"body,omitempty" json:"body,omitempty"`
+	Slots int    `bson:"slots,omitempty" json:"slots,omitempty"`
+	Game  string `bson:"game,omitempty" json:"game,omitempty" validate:"oneof=valorant cs2 lol"`
 }
 
 func PostUpdateByID(c echo.Context) error {
@@ -153,7 +202,7 @@ func PostUpdateByID(c echo.Context) error {
 		})
 	}
 
-	post := new(PostUpdateBody)
+	post := PostUpdateBody{}
 	if err := c.Bind(post); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  http.StatusBadRequest,
@@ -161,12 +210,19 @@ func PostUpdateByID(c echo.Context) error {
 		})
 	}
 
+	if err := c.Validate(post); err != nil {
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
+	}
+
 	data := bson.M{}
 	if post.Body != "" {
 		data["body"] = post.Body
 	}
-	if post.OpenSlots != 0 {
-		data["open_slots"] = post.OpenSlots
+	if post.Slots != 0 {
+		data["slots"] = post.Slots
 	}
 	if post.Game != "" {
 		data["game"] = post.Game

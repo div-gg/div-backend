@@ -29,10 +29,16 @@ func RegisterHandler(c echo.Context) error {
 	}
 
 	if err := c.Bind(&r); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
 	}
 	if err := c.Validate(&r); err != nil {
-		return err
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
 	}
 
 	if hashedPassword, err := utils.CreateHash(r.Password, utils.DefaultParams); err != nil {
@@ -76,7 +82,10 @@ func LoginHandler(c echo.Context) error {
 	data := LoginRequest{}
 
 	if err := c.Bind(&data); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		return c.JSON(http.StatusBadRequest, models.Response{
+			Status:  http.StatusBadRequest,
+			Message: err.Error(),
+		})
 	}
 	if err := c.Validate(&data); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{

@@ -96,7 +96,7 @@ func TournamentGetByID(c echo.Context) error {
 type TournamentCreateBody struct {
 	Title string `json:"title" validate:"required"`
 	Body  string `json:"body" validate:"required"`
-	Game  string `json:"game" validate:"required,oneof=valorant csgo"`
+	Game  string `json:"game" validate:"required,oneof=valorant cs2 lol"`
 }
 
 func TournamentCreate(c echo.Context) error {

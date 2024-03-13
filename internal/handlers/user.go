@@ -58,19 +58,11 @@ func UserGetByID(c echo.Context) error {
 }
 
 func UserGetMe(c echo.Context) error {
-	id, err := primitive.ObjectIDFromHex(c.Get("userId").(string))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, models.Response{
-			Status:  http.StatusBadRequest,
-			Message: "Invalid ID",
-		})
-	}
-
 	var r UserResponse
 
 	if err := db.GetCollection("users").FindOne(
 		c.Request().Context(),
-		bson.M{"_id": id},
+		bson.M{"_id": c.Get("userId")},
 	).Decode(&r); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return c.JSON(http.StatusNotFound, models.Response{
@@ -98,14 +90,6 @@ type UserUpdateMeBody struct {
 }
 
 func UserUpdateMe(c echo.Context) error {
-	id, err := primitive.ObjectIDFromHex(c.Get("userId").(string))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, models.Response{
-			Status:  http.StatusBadRequest,
-			Message: "Invalid ID",
-		})
-	}
-
 	var body UserUpdateMeBody
 	if err := c.Bind(&body); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
@@ -118,7 +102,7 @@ func UserUpdateMe(c echo.Context) error {
 
 	if err := db.GetCollection("users").FindOne(
 		c.Request().Context(),
-		bson.M{"_id": id},
+		bson.M{"_id": c.Get("userId")},
 	).Decode(&r); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return c.JSON(http.StatusNotFound, models.Response{
@@ -157,7 +141,7 @@ func UserUpdateMe(c echo.Context) error {
 
 		if _, err := db.GetCollection("users").UpdateOne(
 			c.Request().Context(),
-			bson.M{"_id": id},
+			bson.M{"_id": c.Get("userId")},
 			bson.M{"$set": data},
 		); err != nil {
 			if mongo.IsDuplicateKeyError(err) {
@@ -188,14 +172,6 @@ type UserChangePasswordMeBody struct {
 }
 
 func UserChangePasswordMe(c echo.Context) error {
-	id, err := primitive.ObjectIDFromHex(c.Get("userId").(string))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, models.Response{
-			Status:  http.StatusBadRequest,
-			Message: "Invalid ID",
-		})
-	}
-
 	var body UserChangePasswordMeBody
 	if err := c.Bind(&body); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
@@ -207,7 +183,7 @@ func UserChangePasswordMe(c echo.Context) error {
 	var r models.User
   if err := db.GetCollection("users").FindOne(
     c.Request().Context(),
-    bson.M{"_id": id},
+    bson.M{"_id": c.Get("userId")},
   ).Decode(&r); err != nil {
     if err == mongo.ErrNoDocuments {
       return c.JSON(http.StatusNotFound, models.Response{
@@ -234,7 +210,7 @@ func UserChangePasswordMe(c echo.Context) error {
   if r.Password == "" {
     if _, err := db.GetCollection("users").UpdateOne(
       c.Request().Context(),
-      bson.M{"_id": id},
+      bson.M{"_id": c.Get("userId")},
       bson.M{"$set": bson.M{
         "password": body.NewPassword,
       }},
@@ -256,7 +232,7 @@ func UserChangePasswordMe(c echo.Context) error {
   if match {
     if _, err := db.GetCollection("users").UpdateOne(
       c.Request().Context(),
-      bson.M{"_id": id},
+      bson.M{"_id": c.Get("userId")},
       bson.M{"$set": bson.M{
         "password": body.NewPassword,
       }},
