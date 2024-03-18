@@ -13,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	// "go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type UserObject struct {
@@ -29,12 +28,12 @@ type PostResult struct {
 	Slots int    `bson:"slots" json:"slots" validate:"required"`
 	Game  string `bson:"game" json:"game" validate:"required,oneof=valorant cs2 lol"`
 
-	CreatedAt         time.Time          `bson:"created_at" json:"created_at"`
-	CreatedUserObject []UserObject         `bson:"created_user_object" json:"created_user_object"`
-	CreatedUser       primitive.ObjectID `bson:"created_user" json:"created_user"`
-	UpdatedAt         time.Time          `bson:"updated_at" json:"updated_at"`
-	UpdatedUser       primitive.ObjectID `bson:"updated_user" json:"updated_user"`
-	ExpireAt          time.Time          `bson:"expire_at" json:"expire_at"`
+	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
+	CreatedUser []UserObject       `bson:"created_user" json:"created_user"`
+	CreatedBy   primitive.ObjectID `bson:"created_by" json:"created_by"`
+	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
+	UpdatedBy   primitive.ObjectID `bson:"updated_by" json:"updated_by"`
+	ExpireAt    time.Time          `bson:"expire_at" json:"expire_at"`
 }
 
 func PostGetAll(c echo.Context) error {
@@ -43,14 +42,14 @@ func PostGetAll(c echo.Context) error {
 	lookupStage := bson.D{
 		{Key: "$lookup", Value: bson.D{
 			{Key: "from", Value: "users"},
-			{Key: "localField", Value: "created_user"},
+			{Key: "localField", Value: "created_by"},
 			{Key: "foreignField", Value: "_id"},
-			{Key: "as", Value: "created_user_object"},
+			{Key: "as", Value: "created_user"},
 		}},
 	}
 	unwindStage := bson.D{
 		{Key: "$unwind", Value: bson.D{
-			{Key: "path", Value: "$created_user"},
+			{Key: "path", Value: "$created_by"},
 			{Key: "preserveNullAndEmptyArrays", Value: true},
 		}},
 	}
@@ -170,8 +169,8 @@ func PostCreate(c echo.Context) error {
 
 	data["created_at"] = time.Now()
 	data["updated_at"] = time.Now()
-	data["created_user"] = c.Get("userId")
-	data["updated_user"] = c.Get("userId")
+	data["created_by"] = c.Get("userId")
+	data["updated_by"] = c.Get("userId")
 	data["expire_at"] = time.Now().Add(time.Duration(6) * time.Hour)
 
 	if _, err := db.GetCollection("posts").InsertOne(
@@ -229,7 +228,7 @@ func PostUpdateByID(c echo.Context) error {
 	}
 
 	data["updated_at"] = time.Now()
-	data["updated_user"] = c.Get("userId")
+	data["updated_by"] = c.Get("userId")
 
 	_, err = db.GetCollection("posts").UpdateByID(
 		c.Request().Context(),

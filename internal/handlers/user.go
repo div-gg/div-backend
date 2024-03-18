@@ -250,5 +250,30 @@ func UserChangePasswordMe(c echo.Context) error {
     Status:  http.StatusForbidden,
     Message: "Current password does not match",
   })
-
 }
+
+func UserUpdatePreferences(c echo.Context) error {
+  var body models.UserPreference
+  if err := c.Bind(&body); err != nil {
+    return c.JSON(http.StatusBadRequest, models.Response{
+      Status:  http.StatusBadRequest,
+      Message: "Invalid request",
+    })
+  }
+
+  if _, err := db.GetCollection("users").UpdateOne(
+    c.Request().Context(),
+    bson.M{"_id": c.Get("userId")},
+    bson.M{"$set": bson.M{
+      "preferences": body,
+    }},
+  ); err != nil {
+    return err
+  }
+
+  return c.JSON(http.StatusOK, models.Response{
+    Status:  http.StatusOK,
+    Message: "Preferences updated successfully",
+  })
+}
+

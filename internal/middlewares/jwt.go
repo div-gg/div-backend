@@ -17,8 +17,8 @@ func VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 		token := strings.Split(c.Request().Header.Get("Authorization"), "Bearer ")
 
     if len(token) != 2 {
-      return c.JSON(http.StatusUnauthorized, models.Response{
-        Status:  http.StatusUnauthorized,
+      return c.JSON(http.StatusBadRequest, models.Response{
+        Status:  http.StatusBadRequest,
         Message: "Invalid token",
       })
     }
@@ -28,8 +28,8 @@ func VerifyToken(next echo.HandlerFunc) echo.HandlerFunc {
 
     userId, err := primitive.ObjectIDFromHex(claims["id"].(string))
     if err != nil {
-      return c.JSON(http.StatusUnauthorized, models.Response{
-        Status:  http.StatusUnauthorized,
+      return c.JSON(http.StatusBadRequest, models.Response{
+        Status:  http.StatusBadRequest,
         Message: "Invalid token",
       })
     }
