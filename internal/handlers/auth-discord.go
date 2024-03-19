@@ -11,7 +11,7 @@ import (
 	"github.com/divinitymn/div-backend/internal/models"
 	"github.com/divinitymn/div-backend/internal/utils"
 
-  "golang.org/x/oauth2"
+	"golang.org/x/oauth2"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
