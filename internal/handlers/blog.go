@@ -21,7 +21,7 @@ func BlogGetAll(c echo.Context) error {
 
 	opts := options.
 		Find().
-		SetSort(bson.M{"created_at": -1}).
+		SetSort(bson.M{ "created_at": -1 }).
 		SetSkip(page).
 		SetLimit(limit)
 
